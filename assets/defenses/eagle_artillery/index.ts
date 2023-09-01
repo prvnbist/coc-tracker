@@ -1,0 +1,6 @@
+export { default as EagleArtillery01 } from '@/public/assets/defenses/eagle_artillery/eagle_artillery_01.webp'
+export { default as EagleArtillery02 } from '@/public/assets/defenses/eagle_artillery/eagle_artillery_02.webp'
+export { default as EagleArtillery03 } from '@/public/assets/defenses/eagle_artillery/eagle_artillery_03.webp'
+export { default as EagleArtillery04 } from '@/public/assets/defenses/eagle_artillery/eagle_artillery_04.webp'
+export { default as EagleArtillery05 } from '@/public/assets/defenses/eagle_artillery/eagle_artillery_05.webp'
+export { default as EagleArtillery06 } from '@/public/assets/defenses/eagle_artillery/eagle_artillery_06.webp'
