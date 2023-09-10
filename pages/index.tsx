@@ -1,36 +1,54 @@
 import Image, { StaticImageData } from 'next/image'
 
-import { Container, Flex, SimpleGrid, Space, Stack, Tabs, Text, Title } from '@mantine/core'
+import { Container, Flex, Header, SimpleGrid, Space, Stack, Tabs, Text, Title } from '@mantine/core'
 
+import { IconElixir, IconGold } from '@/assets/icons'
 import { DEFENSES, RESOURCES, STORAGE } from '@/constants'
 
+import { useGlobalState } from './_app'
+
 export default function Home() {
+   const { player = {} } = useGlobalState()
    return (
-      <Tabs defaultValue="defenses">
-         <Tabs.List>
-            <Tabs.Tab value="defenses">Defenses</Tabs.Tab>
-            <Tabs.Tab value="resources">Resources</Tabs.Tab>
-            <Tabs.Tab value="storage">Storage</Tabs.Tab>
-         </Tabs.List>
-         <Tabs.Panel value="defenses">
-            <DefenseContent />
-         </Tabs.Panel>
-         <Tabs.Panel value="resources">
-            <ResourceContent />
-         </Tabs.Panel>
-         <Tabs.Panel value="storage">
-            <StorageContent />
-         </Tabs.Panel>
-      </Tabs>
+      <>
+         <Header px="md" height={60} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Title order={3}>COC Tracker</Title>
+            <Title order={4}>Town Hall {player?.townHallLevel}</Title>
+            <Stack spacing={0}>
+               <Text fw={500}>{player?.name}</Text>
+               <Text fz="xs" c="dimmed">
+                  {player?.tag}
+               </Text>
+            </Stack>
+         </Header>
+         <Tabs defaultValue="defenses">
+            <Tabs.List position="center">
+               <Tabs.Tab value="defenses">Defenses</Tabs.Tab>
+               <Tabs.Tab value="resources">Resources</Tabs.Tab>
+               <Tabs.Tab value="storage">Storage</Tabs.Tab>
+            </Tabs.List>
+            <Tabs.Panel value="defenses">
+               <DefenseContent />
+            </Tabs.Panel>
+            <Tabs.Panel value="resources">
+               <ResourceContent />
+            </Tabs.Panel>
+            <Tabs.Panel value="storage">
+               <StorageContent />
+            </Tabs.Panel>
+         </Tabs>
+      </>
    )
 }
 
 const DefenseContent = () => {
+   const { player = {} } = useGlobalState()
    return (
-      <Tabs defaultValue="cannon" orientation="vertical">
-         <Tabs.List>
+      <Tabs defaultValue="cannon">
+         <Tabs.List position="center">
             {Object.keys(DEFENSES).map(key => {
                const defense = DEFENSES[key]
+               if (player?.townHallLevel <= defense.availableSinceTownHall) return null
                return (
                   <Tabs.Tab key={defense.key} value={defense.key}>
                      {defense.title}
@@ -40,13 +58,16 @@ const DefenseContent = () => {
          </Tabs.List>
          {Object.keys(DEFENSES).map(key => {
             const defense = DEFENSES[key]
+            if (player?.townHallLevel <= defense.availableSinceTownHall) return null
 
             const townHalls =
                defense?.availabilityAtTownHall
                   ?.map(townHall => {
+                     if (townHall.level !== player?.townHallLevel) return null
+
                      const buildingLevelsPopulated = Array.isArray(townHall.buildingLevels)
                         ? townHall.buildingLevels
-                             ?.map(level => ({ level, ...(defense?.levels?.[level] ?? {}) }))
+                             ?.map(level => ({ ...level, ...(defense?.levels?.[level.level] ?? {}) }))
                              .filter(Boolean)
                         : []
 
@@ -63,15 +84,16 @@ const DefenseContent = () => {
                      <Title size="h2">{defense.title}</Title>
                      <Space h={16} />
                      <Stack spacing="xl">
-                        {townHalls.length > 0 &&
-                           townHalls?.map(townHall => {
-                              return (
-                                 <Stack key={townHall?.level}>
-                                    <Title size="h4">Townhall {townHall?.level}</Title>
-                                    <Cards levels={townHall?.buildingLevels || []} />
-                                 </Stack>
-                              )
-                           })}
+                        {townHalls.length === 0
+                           ? 'No upgrades available in your current townhall'
+                           : townHalls?.map(townHall => {
+                                return (
+                                   <Stack key={townHall?.level}>
+                                      <Title size="h4">Townhall {townHall?.level}</Title>
+                                      <Cards levels={townHall?.buildingLevels || []} />
+                                   </Stack>
+                                )
+                             })}
                      </Stack>
                   </Container>
                </Tabs.Panel>
@@ -82,11 +104,13 @@ const DefenseContent = () => {
 }
 
 const ResourceContent = () => {
+   const { player = {} } = useGlobalState()
    return (
-      <Tabs defaultValue="gold_mine" orientation="vertical">
-         <Tabs.List>
+      <Tabs defaultValue="gold_mine">
+         <Tabs.List position="center">
             {Object.keys(RESOURCES).map(key => {
                const resource = RESOURCES[key]
+               if (player?.townHallLevel <= resource.availableSinceTownHall) return null
                return (
                   <Tabs.Tab key={resource.key} value={resource.key}>
                      {resource.title}
@@ -96,13 +120,16 @@ const ResourceContent = () => {
          </Tabs.List>
          {Object.keys(RESOURCES).map(key => {
             const resource = RESOURCES[key]
+            if (player?.townHallLevel <= resource.availableSinceTownHall) return null
 
             const townHalls =
                resource?.availabilityAtTownHall
                   ?.map(townHall => {
+                     if (townHall.level !== player?.townHallLevel) return null
+
                      const buildingLevelsPopulated = Array.isArray(townHall.buildingLevels)
                         ? townHall.buildingLevels
-                             ?.map(level => ({ level, ...(resource?.levels?.[level] ?? {}) }))
+                             ?.map(level => ({ ...level, ...(resource?.levels?.[level.level] ?? {}) }))
                              .filter(Boolean)
                         : []
 
@@ -119,15 +146,16 @@ const ResourceContent = () => {
                      <Title size="h2">{resource.title}</Title>
                      <Space h={16} />
                      <Stack spacing="xl">
-                        {townHalls.length > 0 &&
-                           townHalls?.map(townHall => {
-                              return (
-                                 <Stack key={townHall?.level}>
-                                    <Title size="h4">Townhall {townHall?.level}</Title>
-                                    <Cards levels={townHall?.buildingLevels || []} />
-                                 </Stack>
-                              )
-                           })}
+                        {townHalls.length === 0
+                           ? 'No upgrades available in your current townhall'
+                           : townHalls?.map(townHall => {
+                                return (
+                                   <Stack key={townHall?.level}>
+                                      <Title size="h4">Townhall {townHall?.level}</Title>
+                                      <Cards levels={townHall?.buildingLevels || []} />
+                                   </Stack>
+                                )
+                             })}
                      </Stack>
                   </Container>
                </Tabs.Panel>
@@ -138,11 +166,14 @@ const ResourceContent = () => {
 }
 
 const StorageContent = () => {
+   const { player = {} } = useGlobalState()
+
    return (
-      <Tabs defaultValue="gold_storage" orientation="vertical">
-         <Tabs.List>
+      <Tabs defaultValue="gold_storage">
+         <Tabs.List position="center">
             {Object.keys(STORAGE).map(key => {
                const storage = STORAGE[key]
+               if (player?.townHallLevel <= storage.availableSinceTownHall) return null
                return (
                   <Tabs.Tab key={storage.key} value={storage.key}>
                      {storage.title}
@@ -152,13 +183,16 @@ const StorageContent = () => {
          </Tabs.List>
          {Object.keys(STORAGE).map(key => {
             const storage = STORAGE[key]
+            if (player?.townHallLevel <= storage.availableSinceTownHall) return null
 
             const townHalls =
                storage?.availabilityAtTownHall
                   ?.map(townHall => {
+                     if (townHall.level !== player?.townHallLevel) return null
+
                      const buildingLevelsPopulated = Array.isArray(townHall.buildingLevels)
                         ? townHall.buildingLevels
-                             ?.map(level => ({ level, ...(storage?.levels?.[level] ?? {}) }))
+                             ?.map(level => ({ ...level, ...(storage?.levels?.[level.level] ?? {}) }))
                              .filter(Boolean)
                         : []
 
@@ -175,15 +209,16 @@ const StorageContent = () => {
                      <Title size="h2">{storage.title}</Title>
                      <Space h={16} />
                      <Stack spacing="xl">
-                        {townHalls.length > 0 &&
-                           townHalls?.map(townHall => {
-                              return (
-                                 <Stack key={townHall?.level}>
-                                    <Title size="h4">Townhall {townHall?.level}</Title>
-                                    <Cards levels={townHall?.buildingLevels || []} />
-                                 </Stack>
-                              )
-                           })}
+                        {townHalls.length === 0
+                           ? 'No upgrades available in your current townhall'
+                           : townHalls?.map(townHall => {
+                                return (
+                                   <Stack key={townHall?.level}>
+                                      <Title size="h4">Townhall {townHall?.level}</Title>
+                                      <Cards levels={townHall?.buildingLevels || []} />
+                                   </Stack>
+                                )
+                             })}
                      </Stack>
                   </Container>
                </Tabs.Panel>
@@ -193,7 +228,12 @@ const StorageContent = () => {
    )
 }
 
-type BuildingLevel = { level: number; image: StaticImageData }
+type BuildingLevel = {
+   level: number
+   buildCost: number
+   currency: 'gold' | 'elixir' | 'dark_elixir'
+   image: StaticImageData
+}
 
 const Cards = ({ levels = [] }: { levels?: BuildingLevel[] }) => {
    if (levels?.length === 0) return null
@@ -237,10 +277,14 @@ const Card = ({ level, label }: { level: BuildingLevel; label: string }) => {
          >
             <Image src={level.image} height={100} alt={label} />
          </Flex>
-         <Flex p="xs">
-            <Text fz="md" w="100%" align="center">
-               Level {level.level}
-            </Text>
+         <Flex p="xs" direction="column" gap={14}>
+            <Text fz="md">Level {level.level}</Text>
+            <Flex align="center" gap={8}>
+               <Image src={level.currency === 'gold' ? IconGold : IconElixir} height={18} alt="Gold Icon" />
+               <Text fz="sm" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {level.buildCost.toLocaleString('en-US')}
+               </Text>
+            </Flex>
          </Flex>
       </Flex>
    )
